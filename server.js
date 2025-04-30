@@ -1,24 +1,40 @@
-var express = require("express");
-var app = express();
-var port = process.env.port || 8080;
-const routes = require('./routes/routes');
+// Required modules
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000; // Port for the server
 const mongoose = require('mongoose');
+const http = require('http').createServer(app); // Create HTTP server from app
+const io = require('socket.io')(http); // Attach socket.io to the HTTP server
+
+// MongoDB connection
+mongoose.connect('mongodb://localhost:27017/myprojectDB')
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.log('MongoDB connection error:', err));
+
+// Socket.IO setup
+io.on('connection', (socket) => {
+  console.log('a user connected'); // When a user connects
+
+  socket.on('disconnect', () => {
+    console.log('user disconnected'); // When a user disconnects
+  });
+
+  // Emit random numbers every second
+  setInterval(() => {
+    socket.emit('number', parseInt(Math.random() * 10));
+  }, 1000);
+});
 
 // Middleware
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/public')); // Serve static files from the 'public' folder
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/myprojectDB', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-mongoose.connection.on('connected', () => {
-  console.log('Connected to MongoDB');
-});
+// Routes
+const routes = require('./routes/routes'); // Custom routes (you might add your own)
+app.use("/", routes);
 
-// Calculator routes — keep them above custom routes
+// Calculator routes (simple APIs for demonstration)
 app.get('/add', (req, res) => {
   const a = parseFloat(req.query.a);
   const b = parseFloat(req.query.b);
@@ -62,10 +78,7 @@ app.get('/divide', (req, res) => {
   res.send(`The quotient of ${a} and ${b} is: ${quotient}`);
 });
 
-// Custom routes — keep this below
-app.use("/", routes);
-
-// Start server
-app.listen(port, () => {
+// Start the server
+http.listen(port, () => {
   console.log(`App listening on port ${port}`);
 });

@@ -52,3 +52,9 @@ const cardList = [
        // addCards(cardList);
         $('.modal').modal();
     });
+// Listen to 'number' event
+socket.on('number', (msg) => {
+    console.log('Random number:', msg);
+    document.getElementById('number').innerText = msg;
+    });
+    
